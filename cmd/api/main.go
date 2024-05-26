@@ -53,18 +53,22 @@ func main() {
 
 	coursesHandler := &handlers.CoursesHandler{Models: app.models}
 	router.POST("/v1/courses", coursesHandler.CreateCourseHandler)
+	router.GET("/v1/courses", coursesHandler.ShowAllCoursesHandler)
 	router.GET("/v1/courses/:id", coursesHandler.ShowCourseHandler)
 	router.PUT("/v1/courses/:id", coursesHandler.UpdateCourseHandler)
 	router.DELETE("/v1/courses/:id", coursesHandler.DeleteCourseHandler)
 
 	modulesHandler := &handlers.ModulesHandler{Models: app.models}
 	router.POST("/v1/modules", modulesHandler.CreateModuleHandler)
+	router.GET("/v1/modules/course/:id", modulesHandler.ShowModulesForCourseHandler)
+	router.GET("/v1/modules", modulesHandler.ShowAllModulesHandler)
 	router.GET("/v1/modules/:id", modulesHandler.ShowModuleHandler)
 	router.PUT("/v1/modules/:id", modulesHandler.UpdateModuleHandler)
 	router.DELETE("/v1/modules/:id", modulesHandler.DeleteModuleHandler)
 
 	lessonsHandler := &handlers.LessonsHandler{Models: app.models}
 	router.POST("/v1/lessons", lessonsHandler.CreateLessonHandler)
+	router.GET("/v1/lessons/module/:id", lessonsHandler.ShowAllLessonsForModuleHandler)
 	router.GET("/v1/lessons/:id", lessonsHandler.ShowLessonHandler)
 	router.PUT("/v1/lessons/:id", lessonsHandler.UpdateLessonHandler)
 	router.DELETE("/v1/lessons/:id", lessonsHandler.DeleteLessonHandler)

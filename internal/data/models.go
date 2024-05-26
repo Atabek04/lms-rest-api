@@ -35,3 +35,37 @@ func (m CourseModel) GetWithModulesAndLessons(id uint) (*Course, error) {
 	}
 	return &course, nil
 }
+
+func (m CourseModel) GetAllWithModulesAndLessons() ([]Course, error) {
+	var courses []Course
+	if err := m.DB.Preload("Modules", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Lessons")
+	}).Find(&courses).Error; err != nil {
+		return nil, err
+	}
+	return courses, nil
+}
+
+func (m ModuleModel) GetAllWithLessonsForCourse(courseID uint) ([]Module, error) {
+	var modules []Module
+	if err := m.DB.Preload("Lessons").Where("course_id = ?", courseID).Find(&modules).Error; err != nil {
+		return nil, err
+	}
+	return modules, nil
+}
+
+func (l LessonModel) GetAllForModule(moduleID uint) ([]Lesson, error) {
+	var lessons []Lesson
+	if err := l.DB.Where("module_id = ?", moduleID).Find(&lessons).Error; err != nil {
+		return nil, err
+	}
+	return lessons, nil
+}
+
+func (m ModuleModel) GetAll() ([]Module, error) {
+	var modules []Module
+	if err := m.DB.Find(&modules).Error; err != nil {
+		return nil, err
+	}
+	return modules, nil
+}

@@ -41,6 +41,22 @@ func (h *LessonsHandler) CreateLessonHandler(c *gin.Context) {
 	helpers.WriteJSON(c, http.StatusCreated, gin.H{"lesson": lesson})
 }
 
+func (h *LessonsHandler) ShowAllLessonsForModuleHandler(c *gin.Context) {
+	moduleID, err := helpers.ReadIDParam(c)
+	if err != nil {
+		helpers.NotFoundResponse(c)
+		return
+	}
+
+	lessons, err := h.Models.Lessons.GetAllForModule(moduleID)
+	if err != nil {
+		helpers.ServerErrorResponse(c, err)
+		return
+	}
+
+	helpers.WriteJSON(c, http.StatusOK, gin.H{"lessons": lessons})
+}
+
 func (h *LessonsHandler) ShowLessonHandler(c *gin.Context) {
 	id, err := helpers.ReadIDParam(c)
 	if err != nil {

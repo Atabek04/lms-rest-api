@@ -35,6 +35,16 @@ func (h *CoursesHandler) CreateCourseHandler(c *gin.Context) {
 	helpers.WriteJSON(c, http.StatusCreated, gin.H{"course": course})
 }
 
+func (h *CoursesHandler) ShowAllCoursesHandler(c *gin.Context) {
+	courses, err := h.Models.Courses.GetAllWithModulesAndLessons() // Update GetAllWithModulesAndLessons to preload modules and lessons
+	if err != nil {
+		helpers.ServerErrorResponse(c, err)
+		return
+	}
+
+	helpers.WriteJSON(c, http.StatusOK, gin.H{"courses": courses})
+}
+
 func (h *CoursesHandler) ShowCourseHandler(c *gin.Context) {
 	id, err := helpers.ReadIDParam(c)
 	if err != nil {
