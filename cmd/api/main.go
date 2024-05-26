@@ -1,21 +1,19 @@
 package main
 
 import (
-	"errors"
-	"github.com/rs/zerolog"
-	"lms-crud-api/internal/data"
-	"log"
-	"time"
-
-	_ "database/sql"
 	"fmt"
+	"lms-crud-api/cmd/api/handlers"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/rs/zerolog"
+	"lms-crud-api/internal/data"
 )
 
 type config struct {
@@ -36,7 +34,7 @@ func main() {
 	var cfg config
 	cfg.port = 4000
 	cfg.env = "development"
-	cfg.db.dsn = "user=youruser password=yourpassword dbname=yourdbname sslmode=disable"
+	cfg.db.dsn = "postgres://postgres:91926499@localhost/lmscrud?sslmode=disable"
 
 	db, err := openDB(cfg)
 	if err != nil {
@@ -51,30 +49,25 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	migrationsPath := "file://migrations"
-	m, err := migrate.New(migrationsPath, cfg.db.dsn)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to prepare database migration")
-	}
-
-	err = m.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		logger.Fatal().Err(err).Msg("Failed to migrate database")
-	}
-
 	router := gin.Default()
-	router.POST("/v1/courses", app.createCourseHandler)
-	router.GET("/v1/courses/:id", app.showCourseHandler)
-	router.PUT("/v1/courses/:id", app.updateCourseHandler)
-	router.DELETE("/v1/courses/:id", app.deleteCourseHandler)
-	router.POST("/v1/modules", app.createModuleHandler)
-	router.GET("/v1/modules/:id", app.showModuleHandler)
-	router.PUT("/v1/modules/:id", app.updateModuleHandler)
-	router.DELETE("/v1/modules/:id", app.deleteModuleHandler)
-	router.POST("/v1/lessons", app.createLessonHandler)
-	router.GET("/v1/lessons/:id", app.showLessonHandler)
-	router.PUT("/v1/lessons/:id", app.updateLessonHandler)
-	router.DELETE("/v1/lessons/:id", app.deleteLessonHandler)
+
+	coursesHandler := &handlers.CoursesHandler{Models: app.models}
+	router.POST("/v1/courses", coursesHandler.CreateCourseHandler)
+	router.GET("/v1/courses/:id", coursesHandler.ShowCourseHandler)
+	router.PUT("/v1/courses/:id", coursesHandler.UpdateCourseHandler)
+	router.DELETE("/v1/courses/:id", coursesHandler.DeleteCourseHandler)
+
+	modulesHandler := &handlers.ModulesHandler{Models: app.models}
+	router.POST("/v1/modules", modulesHandler.CreateModuleHandler)
+	router.GET("/v1/modules/:id", modulesHandler.ShowModuleHandler)
+	router.PUT("/v1/modules/:id", modulesHandler.UpdateModuleHandler)
+	router.DELETE("/v1/modules/:id", modulesHandler.DeleteModuleHandler)
+
+	lessonsHandler := &handlers.LessonsHandler{Models: app.models}
+	router.POST("/v1/lessons", lessonsHandler.CreateLessonHandler)
+	router.GET("/v1/lessons/:id", lessonsHandler.ShowLessonHandler)
+	router.PUT("/v1/lessons/:id", lessonsHandler.UpdateLessonHandler)
+	router.DELETE("/v1/lessons/:id", lessonsHandler.DeleteLessonHandler)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
@@ -97,20 +90,4 @@ func openDB(cfg config) (*gorm.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-func (app *application) badRequestResponse(c *gin.Context, err error) {
-	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-}
-
-func (app *application) serverErrorResponse(c *gin.Context, err error) {
-	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-}
-
-func (app *application) notFoundResponse(c *gin.Context) {
-	c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
-}
-
-func (app *application) writeJSON(c *gin.Context, statusCode int, data gin.H) {
-	c.JSON(statusCode, data)
 }
